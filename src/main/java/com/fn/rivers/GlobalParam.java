@@ -37,7 +37,7 @@ public class GlobalParam {
 	
 	public static final int UNI_PORT = 8619;
 	
-	public static final String BC_IP = "230.0.0.1";
+	public static String BC_IP = "230.0.0.1";
 	 
 	public static List<String> CLOUD_HOSTS = new ArrayList<>();
 	

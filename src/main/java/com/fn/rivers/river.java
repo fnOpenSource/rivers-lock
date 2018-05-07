@@ -13,47 +13,48 @@ import com.fn.rivers.server.LockerLeader;
  * @author chenwen
  *
  */
-public class river { 
-	
+public class river {
+
 	public static void setHosts(String hosts) {
-		for(String ip:hosts.split(",")) {
+		for (String ip : hosts.split(",")) {
 			GlobalParam.CLOUD_HOSTS.add(ip);
-		}  
+		}
 	}
-	
+
 	public static void setMininum_nodes(int mininum_nodes) {
 		GlobalParam.mininum_nodes = mininum_nodes;
 	}
-	
+
 	public static void setCloudName(String cloudName) {
 		GlobalParam.CLOUD_NAME = cloudName;
-		GlobalParam.BC_IP =  new BigInteger(cloudName.getBytes()).mod(new BigInteger("255")).toString();
+		GlobalParam.BC_IP = "230.0.0." + new BigInteger(cloudName.getBytes()).mod(new BigInteger("255")).toString();
 	}
-	
+
 	/**
 	 * 
-	 * @param startMode  CS leader server Mode, P2P no leader mode.
+	 * @param startMode
+	 *            CS leader server Mode, P2P no leader mode.
 	 */
 	public static void setStartMode(String startMode) {
 		GlobalParam.StartMode = startMode;
 	}
-	
+
 	/**
-	 * @param 
-	 * @throws IOException 
+	 * @param
+	 * @throws IOException
 	 */
 	public static void start() throws IOException {
 		Locker locker;
-		GlobalParam.CLOUD_NAME = GlobalParam.CLOUD_NAME+"_"+GlobalParam.StartMode;
-		if(GlobalParam.StartMode.equals("CS")) {
+		GlobalParam.CLOUD_NAME = GlobalParam.CLOUD_NAME + "_" + GlobalParam.StartMode;
+		if (GlobalParam.StartMode.equals("CS")) {
 			locker = new LockerLeader();
-		}else {
+		} else {
 			locker = new LockerElection();
 		}
 		LockerContainer.init(locker);
 	}
-	
+
 	public static String getLockerState() {
-		return null; 
+		return null;
 	}
 }
