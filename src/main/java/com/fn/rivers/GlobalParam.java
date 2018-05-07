@@ -8,6 +8,11 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.PriorityQueue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fn.rivers.correspond.SendRequestProcessor;
 import com.fn.rivers.model.LockerNodesModel;
@@ -45,13 +50,15 @@ public class GlobalParam {
 	 
 	public static volatile LockerStoreModel LOCKERS = new LockerStoreModel();
 	
-	public static volatile LockerNodesModel lockerHoldNodes = new LockerNodesModel();
+	public static volatile LockerNodesModel lockerHoldNodes = new LockerNodesModel(); 
 	
 	public static ConcurrentHashMap<String, PriorityQueue<Server>> waitLockerServers = new ConcurrentHashMap<String, PriorityQueue<Server>>();
 	
 	public static String CLOUD_NAME="RIVERS";
 	
 	public static SendRequestProcessor SendRequestProcessor;
+	
+	public static final Logger LOG = LoggerFactory.getLogger("River.Locker");
 	
 	public static enum MESSAGE_SEND_TYPE {  
 		BROCAST, UNICAST 
@@ -80,7 +87,7 @@ public class GlobalParam {
 		LEADER_DISAGREE(402), 
 		LEADER_LIVECHECK(410),
 		LEADER_LIVERESPONSE(411),
-		LEARDER_BRC_CONFIRM(420),
+		LEARDER_INFO_BRC(420),
 		LEADER_LOCKREQUEST(520),
 		LEADER_LOCKAGREE(521),
 		LEADER_LOCKDISAGREE(521),

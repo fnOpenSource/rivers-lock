@@ -1,8 +1,5 @@
 package com.fn.rivers.server;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.fn.rivers.GlobalParam;
 import com.fn.rivers.GlobalParam.MESSAGE_SEND_TYPE;
 import com.fn.rivers.GlobalParam.MESSAGE_TYPE;
@@ -13,13 +10,11 @@ import com.fn.rivers.correspond.Request;
  * @author chenwen
  *
  */
-public class LockerElection implements Locker { 
-
-	private static final Logger LOG = LoggerFactory.getLogger(LockerElection.class); 
+public class LockerElection implements Locker {  
 
 	public LockerElection() {
 		new ServerMaintain().start();
-		LOG.info("River Lock start success with Election mode!");
+		GlobalParam.LOG.info("River Lock start success with Election mode!");
 	}
 
 	public boolean acquire(String LockName) { 
@@ -36,7 +31,7 @@ public class LockerElection implements Locker {
 					if(GlobalParam.LOCKERS.get(LockName).get())
 						return true;
 				} catch (InterruptedException e) {
-					LOG.warn("Acquire Lock " + LockName + " InterruptedException", e);
+					GlobalParam.LOG.warn("Acquire Lock " + LockName + " InterruptedException", e);
 				}
 			}
 		}
@@ -58,7 +53,7 @@ public class LockerElection implements Locker {
 		if (GlobalParam.SendRequestProcessor != null && GlobalParam.CLOUD_NODES.liveNums()>=GlobalParam.mininum_nodes) {
 			return true;
 		}else {
-			LOG.info("Cloud start nodes not match mininum_nodes");
+			GlobalParam.LOG.info("Cloud start nodes not match mininum_nodes");
 			return false;
 		}
 	}

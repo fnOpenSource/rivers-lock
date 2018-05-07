@@ -6,22 +6,16 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.net.Socket;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-/**
- * 
- * @author chenwen
- *
- */
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.fn.rivers.GlobalParam; 
+import com.fn.rivers.GlobalParam;
 import com.fn.rivers.GlobalParam.MESSAGE_SEND_TYPE;
 import com.fn.rivers.GlobalParam.MESSAGE_TYPE;
 import com.fn.rivers.server.LeaderMaintain;
@@ -34,15 +28,15 @@ import com.fn.rivers.util.IpV4Util;;
  * @author chengwen
  *
  */
-public class SendRequestProcessor {
-
-	private static final Logger LOG = LoggerFactory.getLogger(SendRequestProcessor.class);
+public class SendRequestProcessor { 
 
 	public BlockingQueue<Request> uni_messages = new LinkedBlockingQueue<>();
 
 	public BlockingQueue<Request> broad_messages = new LinkedBlockingQueue<>();
 
 	private MulticastSocket BCsocket;
+	
+	private HashMap<String, Socket> UNIsocket = new HashMap<>();
 
 	private InetAddress BCAddr;
 
@@ -54,7 +48,7 @@ public class SendRequestProcessor {
 				try {
 					uniCast(uni_messages.take());
 				} catch (InterruptedException e) {
-					LOG.error("Unicast Message InterruptedException", e);
+					GlobalParam.LOG.error("Unicast Message InterruptedException", e);
 				}
 			}
 		}).start();
@@ -64,7 +58,7 @@ public class SendRequestProcessor {
 				try {
 					broadCast(broad_messages.take());
 				} catch (InterruptedException e) {
-					LOG.error("Broadcast Message InterruptedException", e);
+					GlobalParam.LOG.error("Broadcast Message InterruptedException", e);
 				}
 			}
 		}).start();
@@ -78,7 +72,7 @@ public class SendRequestProcessor {
 				this.broad_messages.put(rq);
 			}
 		} catch (InterruptedException e) {
-			LOG.error("Message Queue InterruptedException", e);
+			GlobalParam.LOG.error("Message Queue InterruptedException", e);
 		}
 	}
 
@@ -100,26 +94,32 @@ public class SendRequestProcessor {
 				} 
 			} 
 		} catch (Exception e) {
-			LOG.error("Broad Cast Service Exception", e);
+			GlobalParam.LOG.error("Broad Cast Service Exception", e);
 		}
 	}
 
 	private void uniCast(Request rq) {
 		if(rq.getDestinationIp().equals(GlobalParam.NODE_IP))
 			return;
-		try (Socket SK = new Socket(rq.getDestinationIp(), rq.getPort())) {
-			OutputStream os = SK.getOutputStream();
+		try {
+			if(!UNIsocket.containsKey(rq.getDestinationIp()) || !UNIsocket.get(rq.getDestinationIp()).isConnected()) {
+				Socket sk = new Socket();
+				sk.connect(new InetSocketAddress(rq.getDestinationIp(), rq.getPort()));
+				UNIsocket.put(rq.getDestinationIp(),sk);
+			} 
+			OutputStream os = UNIsocket.get(rq.getDestinationIp()).getOutputStream();
 			os.write(messageOut(rq).toByteArray());
 			os.flush();
-			os.close();
-		} catch (Exception e) {
+			os.close(); 
+		}catch (Exception e) {
 			if(rq.getType().getVal()<200) {
 				ServerMaintain.serverRemove(rq.getDestinationIp());
 			}else if(rq.getType()==MESSAGE_TYPE.LEADER_LIVECHECK) {
-				LeaderMaintain.leaderCheck(true);
+				LeaderMaintain.leaderCheck();
 			}  
-			LOG.warn(rq.getDestinationIp() + " message deliver failed!");
-		}
+			e.printStackTrace();
+			GlobalParam.LOG.warn(rq.getDestinationIp() + " message deliver failed!");
+		} 
 	}
 
 	private ByteArrayOutputStream messageOut(Request rq) throws IOException {

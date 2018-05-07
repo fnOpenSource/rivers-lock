@@ -1,12 +1,9 @@
 package com.fn.rivers.server;
 
 import java.util.Iterator;
+import java.util.Map.Entry;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.Map.Entry;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.fn.rivers.GlobalParam;
 import com.fn.rivers.GlobalParam.MESSAGE_SEND_TYPE;
@@ -18,9 +15,7 @@ import com.fn.rivers.correspond.Request;
  * @author chenwen
  *
  */
-public class ServerMaintain extends Thread {
-
-	private static final Logger LOG = LoggerFactory.getLogger(ServerMaintain.class);
+public class ServerMaintain extends Thread { 
 
 	public void run() {
 		TimerTask task = new TimerTask() {
@@ -29,7 +24,7 @@ public class ServerMaintain extends Thread {
 				serverCheck();
 			}
 		};
-		new Timer().schedule(task, 2000, 3000);
+		new Timer().schedule(task, 0, 3000);
 	}
 
 	public static void serverCheck() {
@@ -51,21 +46,16 @@ public class ServerMaintain extends Thread {
 		synchronized (GlobalParam.CLOUD_NODES) {
 			if (GlobalParam.CLOUD_NODES.containsKey(ip)) {
 				GlobalParam.CLOUD_NODES.remove(ip);
-				LOG.info("Node " + ip + " Auto Remove From Cloud!");
+				GlobalParam.LOG.info("Node " + ip + " Auto Remove From Cloud!");
 			}
 		}
-	}
-
-	public static void setLeader(String ip) {
-		GlobalParam.CLOUD_NODES.get(ip).updateOnline();
-		GlobalParam.CLOUD_NODES.get(ip).isLeader.set(true);
-	}
+	} 
 
 	public static void serverAdd(String ip) {
 		synchronized (GlobalParam.CLOUD_NODES) {
 			if (!GlobalParam.CLOUD_NODES.containsKey(ip)) {
 				GlobalParam.CLOUD_NODES.put(ip, new Server(ip));
-				LOG.info("Node " + ip + " Join Cloud!");
+				GlobalParam.LOG.info("Node " + ip + " Join Cloud!");
 			} else {
 				GlobalParam.CLOUD_NODES.get(ip).updateOnline();
 			}

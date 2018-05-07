@@ -5,6 +5,9 @@ package com.fn.rivers.server;
  *
  */
 public interface Locker {
+	
 	 public boolean acquire(String LockName);
+	 
 	 public boolean release(String LockName);
+	 
 }

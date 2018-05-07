@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
+import java.math.BigInteger;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
@@ -17,12 +18,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.fn.rivers.GlobalParam;
 import com.fn.rivers.GlobalParam.MESSAGE_SEND_TYPE;
 import com.fn.rivers.GlobalParam.MESSAGE_TYPE;
+import com.fn.rivers.server.LeaderMaintain;
 import com.fn.rivers.server.Server;
 import com.fn.rivers.server.ServerMaintain; 
 
@@ -31,14 +30,12 @@ import com.fn.rivers.server.ServerMaintain;
  * @author chenwen
  *
  */
-public class NodeCPU {
-	private static final Logger LOG = LoggerFactory.getLogger(NodeCPU.class);
-	
+public class NodeCPU { 
 	/**sum each vote numbers*/
 	private static volatile ConcurrentHashMap<String, AtomicInteger> ackPassNums = new ConcurrentHashMap<>();
 	
 	/**store discard message id*/
-	private static volatile ConcurrentLinkedQueue<Integer> discardMessageId = new ConcurrentLinkedQueue<>(); 
+	private static volatile ConcurrentLinkedQueue<BigInteger> discardMessageId = new ConcurrentLinkedQueue<>(); 
 	
 	private List<String> node_ips = new ArrayList<>();
  
@@ -56,7 +53,7 @@ public class NodeCPU {
 				socket.setLoopbackMode(true);
 				GlobalParam.SendRequestProcessor = new SendRequestProcessor();
 				GlobalParam.SendRequestProcessor.init(socket, bcAddr);
-				LOG.info("Start Auto Cloud Building...");
+				GlobalParam.LOG.info("Start Auto Cloud Building...");
 				AutoCloudInit();
 				DatagramPacket inpack = new DatagramPacket(new byte[4096], 4096);
 				while (true) {
@@ -76,7 +73,7 @@ public class NodeCPU {
 					} 
 				}
 			} catch (Exception e) {
-				LOG.error("Broad Cast Service IOException", e);
+				GlobalParam.LOG.error("Broad Cast Service IOException", e);
 			}
 		}).start();
 	}
@@ -89,7 +86,7 @@ public class NodeCPU {
 					new UnicastHandler(client);
 				}
 			} catch (Exception e) {
-				LOG.error("unicast Service Exception", e);
+				GlobalParam.LOG.error("unicast Service Exception", e);
 			}
 		}).start();
 	}
@@ -119,7 +116,7 @@ public class NodeCPU {
 				}
 				is.close();
 			} catch (Exception e) {
-				LOG.error("Receive Message Exception,", e);
+				GlobalParam.LOG.error("Receive Message Exception,", e);
 			}
 		}
 	}
@@ -163,8 +160,9 @@ public class NodeCPU {
 			if(ackPassNums.containsKey(rq.getFlag())) {
 				if(ackPassNums.get(rq.getFlag()).addAndGet(1)>GlobalParam.CLOUD_HOSTS.size()/2) {
 					GlobalParam.CLOUD_NODES.currentServer().isLeader.set(true);
+					LeaderMaintain.isElecting.set(false);
 					GlobalParam.SendRequestProcessor.put(
-							new Request(MESSAGE_TYPE.LEARDER_BRC_CONFIRM, GlobalParam.BC_PORT, "",rq.getFlag(),null),
+							new Request(MESSAGE_TYPE.LEARDER_INFO_BRC, GlobalParam.BC_PORT, "",rq.getFlag(),null),
 							MESSAGE_SEND_TYPE.BROCAST);
 				} 	
 			}else {
@@ -173,7 +171,7 @@ public class NodeCPU {
 			break;
 			
 		case LEADER_DISAGREE:
-			ServerMaintain.setLeader(rq.getSourceIP());
+			LeaderMaintain.setLeader(rq.getSourceIP());
 			break;
 			
 		case LEADER_LIVECHECK:
@@ -215,6 +213,12 @@ public class NodeCPU {
 			
 		case LEADER_LOCKRELEASE:
 			GlobalParam.lockerHoldNodes.removeAndSet(rq.getFlag(),rq.getSourceIP());
+			break;
+		
+		case LEARDER_INFO_BRC:
+			LeaderMaintain.setLeader(rq.getSourceIP());
+			LeaderMaintain.isElecting.set(false);
+			GlobalParam.LOG.info("Leader is "+rq.getSourceIP());
 			break;
 			
 		default:

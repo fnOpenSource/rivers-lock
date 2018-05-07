@@ -1,7 +1,7 @@
 package com.fn.rivers.correspond;
 
 import java.io.Serializable;
-import java.util.Random;
+import java.math.BigInteger;
 
 import com.fn.rivers.GlobalParam;
 import com.fn.rivers.GlobalParam.MESSAGE_TYPE;
@@ -13,7 +13,7 @@ import com.fn.rivers.GlobalParam.MESSAGE_TYPE;
  */
 public class Request implements Serializable{ 
 	private static final long serialVersionUID = 6020511430031014157L;
-	private final int id; 
+	private final BigInteger id; 
 	private final MESSAGE_TYPE type;
 	private final String source_ip = GlobalParam.NODE_IP;
 	private String destinationIp;
@@ -31,7 +31,11 @@ public class Request implements Serializable{
 	 * @param data Message contents
 	 */
 	public Request(MESSAGE_TYPE type,int port,String destinationIp,String flag,Object data) {
-		this.id = new Random().nextInt(99999999); 
+		if(data==null) {
+			this.id = new BigInteger((String.valueOf(type.getVal())+destinationIp+flag).getBytes()); 
+		}else {
+			this.id = new BigInteger((String.valueOf(type.getVal())+data+destinationIp+flag).getBytes()); 
+		} 
 		this.type = type; 
 		this.destinationIp = destinationIp;
 		this.port = port;
@@ -44,7 +48,7 @@ public class Request implements Serializable{
 		this.destinationIp = destinationIp;
 	}
 	
-	public int getId() {
+	public BigInteger getId() {
 		return id;
 	}
 
