@@ -1,6 +1,7 @@
 package com.fn.rivers;
 
 import java.io.IOException;
+import java.math.BigInteger;
 
 import com.fn.rivers.locks.LockerContainer;
 import com.fn.rivers.server.Locker;
@@ -26,6 +27,7 @@ public class river {
 	
 	public static void setCloudName(String cloudName) {
 		GlobalParam.CLOUD_NAME = cloudName;
+		GlobalParam.BC_IP =  new BigInteger(cloudName.getBytes()).mod(new BigInteger("255")).toString();
 	}
 	
 	/**
