@@ -102,24 +102,32 @@ public class SendRequestProcessor {
 		if(rq.getDestinationIp().equals(GlobalParam.NODE_IP))
 			return;
 		try {
-			if(!UNIsocket.containsKey(rq.getDestinationIp()) || !UNIsocket.get(rq.getDestinationIp()).isConnected()) {
-				Socket sk = new Socket();
-				sk.connect(new InetSocketAddress(rq.getDestinationIp(), rq.getPort()));
-				UNIsocket.put(rq.getDestinationIp(),sk);
-			} 
+			if(!UNIsocket.containsKey(rq.getDestinationIp())) { 
+				UNIsocket.put(rq.getDestinationIp(),getSocket(rq));
+			}else {
+				if(UNIsocket.get(rq.getDestinationIp()).isClosed()) {
+					UNIsocket.get(rq.getDestinationIp()).close();
+					UNIsocket.put(rq.getDestinationIp(),getSocket(rq));
+				}
+			}
 			OutputStream os = UNIsocket.get(rq.getDestinationIp()).getOutputStream();
 			os.write(messageOut(rq).toByteArray());
 			os.flush();
 			os.close(); 
-		}catch (Exception e) {
+		}catch (Exception e) { 
+			GlobalParam.LOG.warn(rq.getDestinationIp() + " message deliver failed!");
 			if(rq.getType().getVal()<200) {
 				ServerMaintain.serverRemove(rq.getDestinationIp());
 			}else if(rq.getType()==MESSAGE_TYPE.LEADER_LIVECHECK) {
 				LeaderMaintain.leaderCheck();
-			}  
-			e.printStackTrace();
-			GlobalParam.LOG.warn(rq.getDestinationIp() + " message deliver failed!");
+			}    
 		} 
+	}
+	
+	private Socket getSocket(Request rq) throws Exception {
+		Socket sk = new Socket();
+		sk.connect(new InetSocketAddress(rq.getDestinationIp(), rq.getPort()),GlobalParam.nodeHeartBeatTime);
+		return sk;
 	}
 
 	private ByteArrayOutputStream messageOut(Request rq) throws IOException {
